@@ -6,6 +6,8 @@ Makefile
 
 # Extra folders
 /.idea
+/.vscode
+/env
 
 # pytest
 /.pytest_cache/
