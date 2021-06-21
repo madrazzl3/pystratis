@@ -1,5 +1,5 @@
 from __future__ import annotations
-from typing import Callable
+from typing import Callable, Union
 from functools import total_ordering
 from decimal import Decimal, InvalidOperation
 
@@ -9,6 +9,7 @@ class Money:
     """Represents Money."""
     def __init__(self, value):
         self._validate_value(value)
+        value = self._fix_comma_separated_str(value)
         if isinstance(value, (float, Decimal, int, str)):
             self._value = round(Decimal(value), 8)
         if isinstance(value, Money):
@@ -48,6 +49,7 @@ class Money:
 
         if isinstance(v, (int, float, Decimal, str)):
             try:
+                v = cls._fix_comma_separated_str(v)
                 v = Decimal(v)
                 if v < 0:
                     raise ValueError('Must be positive.')
@@ -57,6 +59,12 @@ class Money:
     def to_coin_unit(self) -> str:
         # noinspection PyTypeChecker
         return '{:.8f}'.format(self.value)
+
+    @classmethod
+    def _fix_comma_separated_str(cls, value):
+        if isinstance(value, str):
+            return value.replace(',', '.')
+        return value
 
     def __eq__(self, other) -> bool:
         if isinstance(other, Money):
@@ -95,23 +103,21 @@ class Money:
             return Money(self.value + other)
         raise NotImplementedError(f'Addition between Money and {type(other)} is not defined.')
 
-    def __truediv__(self, other) -> Money:
+    def __truediv__(self, other) -> Union[Decimal, Money]:
         if isinstance(other, Money):
-            return Money(self.value / other.value)
+            return Decimal(self.value / other.value)
         if isinstance(other, (int, float, Decimal)):
             return Money(self.value / other)
         raise NotImplementedError(f'Division between Money and {type(other)} is not defined.')
 
-    def __floordiv__(self, other) -> Money:
+    def __floordiv__(self, other) -> Union[int, Money]:
         if isinstance(other, Money):
-            return Money(self.value // other.value)
+            return int(self.value // other.value)
         if isinstance(other, (int, float, Decimal)):
             return Money(self.value // other)
         raise NotImplementedError(f'Division between Money and {type(other)} is not defined.')
 
     def __mul__(self, other) -> Money:
-        if isinstance(other, Money):
-            return Money(self.value * other.value)
         if isinstance(other, (int, float, Decimal)):
             return Money(self.value * other)
         raise NotImplementedError(f'Multiplication between Money and {type(other)} is not defined.')
