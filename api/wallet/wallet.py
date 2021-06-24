@@ -161,11 +161,15 @@ class Wallet(APIRequest, metaclass=EndpointRegister):
         return data
 
     @endpoint(f'{route}/load')
-    def load(self, request_model: LoadRequest, **kwargs) -> None:
+    def load(self,
+             name: str,
+             password: str,
+             **kwargs) -> None:
         """Loads a previously created wallet.
 
         Args:
-            request_model: LoadRequest model
+            name (str): The name of the wallet.
+            password (str): The password of the wallet.
             **kwargs:
 
         Returns:
@@ -173,14 +177,28 @@ class Wallet(APIRequest, metaclass=EndpointRegister):
         Raises:
             APIError
         """
+        request_model = LoadRequest(
+            name=name,
+            password=SecretStr(password)
+        )
         self.post(request_model, **kwargs)
 
     @endpoint(f'{route}/recover')
-    def recover(self, request_model: RecoverRequest, **kwargs) -> None:
+    def recover(self, 
+                mnemonic: str,
+                password: str,
+                passphrase: str,
+                name: str,
+                creation_date: Optional[str] = None,
+                **kwargs) -> None:
         """Recovers an existing wallet.
 
         Args:
-            request_model: RecoverRequest model
+            mnemonic (str): The mnemonic used to create this wallet.
+            password (str): The password of the wallet.
+            passphrase (str): The passphrase of the wallet.
+            name (str): The name for a wallet.
+            creation_date (str, optional): The creation date of the wallet.
             **kwargs:
 
         Returns:
@@ -188,14 +206,29 @@ class Wallet(APIRequest, metaclass=EndpointRegister):
         Raises:
             APIError
         """
+        request_model = RecoverRequest(
+            mnemonic=mnemonic,
+            password=SecretStr(password),
+            passphrase=SecretStr(passphrase),
+            name=name,
+            creation_date=creation_date
+        )
         self.post(request_model, **kwargs)
 
     @endpoint(f'{route}/recover-via-extpubkey')
-    def recover_via_extpubkey(self, request_model: ExtPubRecoveryRequest, **kwargs) -> None:
+    def recover_via_extpubkey(self, 
+                              extpubkey: Union[ExtPubKey, str],
+                              account_index: int,
+                              name: str,
+                              creation_date: Optional[str] = None,
+                              **kwargs) -> None:
         """Recovers a wallet using its extended public key.
 
         Args:
-            request_model: ExtPubRecoveryRequest model
+            extpubkey (ExtPubKey | str): The extended public key used to recover wallet.
+            account_index (int): The index of extended public key.
+            name (str): The name of the wallet.
+            creation_date (str, optional): The creation date of the wallet.
             **kwargs:
 
         Returns:
@@ -203,38 +236,55 @@ class Wallet(APIRequest, metaclass=EndpointRegister):
         Raises:
             APIError
         """
+        if isinstance(ExtPubKey, str):
+            extpubkey = ExtPubKey(extPubKey=extpubkey)
+        request_model = ExtPubRecoveryRequest(
+            extpubkey=extpubkey,
+            account_index=account_index,
+            name=name,
+            creation_date=creation_date
+        )
         self.post(request_model, **kwargs)
 
     @endpoint(f'{route}/general-info')
-    def general_info(self, request_model: GeneralInfoRequest, **kwargs) -> WalletGeneralInfoModel:
+    def general_info(self, name: str, **kwargs) -> WalletGeneralInfoModel:
         """Gets some general information about a wallet.
 
         Args:
-            request_model: GeneralInfoRequest model
+            name (str): The name of the wallet.
             **kwargs:
 
         Returns:
-            WalletGeneralInfoModel
+            WalletGeneralInfoModel: The model with general info about this wallet.
         Raises:
             APIError
         """
+        request_model = GeneralInfoRequest(name=name)
         data = self.get(request_model, **kwargs)
 
         return WalletGeneralInfoModel(**data)
 
     @endpoint(f'{route}/transactioncount')
-    def transaction_count(self, request_model: AccountRequest, **kwargs) -> int:
+    def transaction_count(self,
+                          wallet_name: str,
+                          account_name: Optional[str] = 'account 0',
+                          **kwargs) -> int:
         """Get the transaction count for the specified Wallet and Account.
 
         Args:
-            request_model: AccountRequest model
+            wallet_name (str): The name of wallet to retrieve info from.
+            account_name (str, optional): The name of the account to retrieve info for.
             **kwargs:
 
         Returns:
-            int
+            int: The transaction count for specified wallet and account.
         Raises:
             APIError
         """
+        request_model = AccountRequest(
+            wallet_name=wallet_name,
+            account_name=account_name
+        )
         data = self.get(request_model, **kwargs)
 
         return data['transactionCount']

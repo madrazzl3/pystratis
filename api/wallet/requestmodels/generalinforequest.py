@@ -3,5 +3,9 @@ from pybitcoin import Model
 
 
 class GeneralInfoRequest(Model):
-    """A GeneralInfoRequest."""
+    """A request model used for the /wallet/general-info endpoint.
+
+    Args:
+        name (str): The name of the wallet.
+    """
     name: str = Field(alias='Name')
